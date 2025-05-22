@@ -2,7 +2,7 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": ".",
-    "outDir": "build",
+    "outDir": "build/default",
 
     "lib": ["ESNext"],
     "target": "ESNext",

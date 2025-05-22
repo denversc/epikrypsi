@@ -3,17 +3,24 @@ import securityPlugin from "eslint-plugin-security";
 import simpleImportSortPlugin from "eslint-plugin-simple-import-sort";
 import unicornPlugin from "eslint-plugin-unicorn";
 import globals from "globals";
-import tsPlugin from "typescript-eslint";
+import tsPlugin, { type ConfigArray } from "typescript-eslint";
 
-/** @type {import('eslint').Linter.Config[]} */
-export default [
+const config: ConfigArray = tsPlugin.config(
   pluginJs.configs.recommended,
-  ...tsPlugin.configs.recommended,
+  tsPlugin.configs.strictTypeChecked,
   securityPlugin.configs.recommended,
   {
     files: ["**/*.ts"],
     ignores: ["build/**/*"],
-    languageOptions: { globals: globals.node },
+    languageOptions: {
+      globals: globals.node,
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ["eslint.config.ts"],
+          defaultProject: "tsconfig.eslint.json",
+        },
+      },
+    },
     rules: {
       "func-style": ["error", "expression"],
       "no-restricted-syntax": ["off", "ForOfStatement"],
@@ -22,6 +29,9 @@ export default [
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/consistent-type-definitions": ["error", "type"],
     },
+  },
+  {
+    ignores: ["build/**/*"],
   },
   unicornPlugin.configs.all,
   {
@@ -39,4 +49,6 @@ export default [
       "simple-import-sort/exports": "error",
     },
   },
-];
+);
+
+export default config;
