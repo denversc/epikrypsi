@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": ".",
+    "outDir": "build",
+
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": false,
+
+    "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": true,
+    "allowUnusedLabels": false,
+    "alwaysStrict": true,
+    "erasableSyntaxOnly": true,
+    "esModuleInterop": true,
+    "exactOptionalPropertyTypes": true,
+    "experimentalDecorators": false,
+    "isolatedDeclarations": true,
+    "isolatedModules": true,
+    "newLine": "lf",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveConstEnums": true,
+    "pretty": true,
+    "rewriteRelativeImportExtensions": true,
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "strict": true,
+
+    "types": ["node", "bun"]
+  }
+}
