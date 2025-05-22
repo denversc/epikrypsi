@@ -3,11 +3,21 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "prettier": {
+    "arrowParens": "avoid",
+    "printWidth": 100,
+    "quoteProps": "preserve",
+    "singleQuote": false,
+    "trailingComma": "all"
+  },
   "scripts": {
+    "prettier": "prettier --write .",
+    "prettier:check": "prettier --check .",
     "tsc": "tsc -b"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "prettier": "^3.5.3"
   },
   "peerDependencies": {
     "typescript": "^5"
