@@ -5,7 +5,13 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 
 import { version } from "../package.json" with { type: "json" };
+import { AsyncDisposableStack } from "./disposable.ts";
 import { getLogger, type Logger } from "./logging.ts";
+import {
+  ConstantPasswordProvider,
+  type PasswordProvider,
+  ReadlinePasswordProvider,
+} from "./passwords.ts";
 
 export async function main(): Promise<void> {
   const logger = getLogger();
@@ -18,14 +24,21 @@ export async function main(): Promise<void> {
       command: "init <file>",
       describe: "Create a new Epikrypsi volume",
       builder: yargs =>
-        yargs.positional("file", {
-          type: "string",
-          describe: "The file to create",
-          demandOption: true,
-        }),
+        yargs
+          .positional("file", {
+            type: "string",
+            describe: "The file to create",
+            demandOption: true,
+          })
+          .option("password", {
+            alias: "p",
+            string: true,
+            describe: "The password to use for the new Epikrypsi volume",
+          }),
       handler: argv => {
-        const { file } = argv;
-        return runInitCommand({ logger, file });
+        const { file, password } = argv;
+        const passwordProvider = passwordProviderFromArguments({ password });
+        return runInitCommand({ logger, file, passwordProvider });
       },
     })
     .showHelpOnFail(false, "Specify --help for help")
@@ -38,32 +51,36 @@ export async function main(): Promise<void> {
   }
 }
 
-class DisposableFileHandle {
-  #fileHandle: fs.FileHandle;
-
-  constructor(fileHandle: fs.FileHandle) {
-    this.#fileHandle = fileHandle;
-  }
-
-  close(): Promise<void> {
-    console.log("Closing file handle");
-    return this.#fileHandle.close();
-  }
-
-  [Symbol.asyncDispose](): Promise<void> {
-    return this.close();
-  }
+function passwordProviderFromArguments(arguments_: {
+  password: string | undefined;
+}): PasswordProvider {
+  const { password } = arguments_;
+  const trimmedPassword = password?.trim();
+  return typeof trimmedPassword === "string" && trimmedPassword.length > 0 ? new ConstantPasswordProvider(trimmedPassword) : new ReadlinePasswordProvider({ input: process.stdin, output: process.stdout });
 }
 
-async function runInitCommand(arguments_: { logger: Logger; file: string }): Promise<void> {
-  const { logger, file } = arguments_;
+type InitCommandArguments = {
+  logger: Logger;
+  file: string;
+  passwordProvider: PasswordProvider;
+}
+
+async function runInitCommand(arguments_: InitCommandArguments): Promise<void> {
+  const { logger, file, passwordProvider } = arguments_;
+  await using asyncDisposableStack = new AsyncDisposableStack();
+
+  const password = await passwordProvider.getPassword({
+    prompt: "Enter the password for the new Epikrypsi volume",
+  });
+
   logger.info(`Creating a new Epikrypsi volume: ${file}`);
 
   const f = await fs.open(file, "wx");
-  await using x = new DisposableFileHandle(f);
+  asyncDisposableStack.adopt(f, f => f.close());
 
   const initialData = crypto.randomBytes(4096 * 3);
-  f.write(initialData);
+  await f.write(initialData);
+  await f.write(new TextEncoder().encode(password));
 
   logger.info(`Created new Epikrypsi volume: ${file}`);
 }
