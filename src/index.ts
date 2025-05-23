@@ -25,10 +25,16 @@ export async function main(): Promise<void> {
 function initCommand(arguments_: { logger: Logger }): CommandModule {
   const { logger } = arguments_;
   return {
-    command: "init",
+    command: "init <file>",
     describe: "Create a new Epikrypsi volume",
-    handler: async () => {
-      logger.info("Creating a new Epikrypsi volume...");
+    builder: yargs =>
+      yargs.positional("file", {
+        type: "string",
+        describe: "The file to create",
+        demandOption: true,
+      }),
+    handler: async argv => {
+      logger.info(`Creating a new Epikrypsi volume: ${argv["file"]}`);
       await new Promise(resolve => setTimeout(resolve, 3000));
       logger.info("Creating a new Epikrypsi volume DONE!");
     },
