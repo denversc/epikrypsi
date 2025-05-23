@@ -1,5 +1,6 @@
 {
   "extends": "../tsconfig.base",
+  "files": ["../package.json"],
   "references": [],
   "include": ["*"]
 }

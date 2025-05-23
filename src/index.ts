@@ -1,16 +1,31 @@
-import signale, { type SignaleConfig } from "signale";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
 
-const signaleConfig: SignaleConfig = Object.freeze({
-  displayScope: false,
-  displayBadge: true,
-  displayDate: true,
-  displayTimestamp: true,
-  displayFilename: false,
-  displayLabel: false,
-});
+import { version } from "../package.json" with { type: "json" };
+import { getLogger, type Logger } from "./logging.ts";
 
-const logger = new signale.Signale({ config: signaleConfig });
+export async function main(): Promise<void> {
+  const logger = getLogger();
 
-logger.info("Hello World!");
+  await yargs(hideBin(process.argv))
+    .scriptName("epk")
+    .version(version)
+    .usage("Usage: $0 <command> [options]")
+    .command(initCommand({ logger }))
+    .showHelpOnFail(true)
+    .strict()
+    .parse();
+}
 
-logger.info(globalThis.Bun);
+function initCommand(arguments_: { logger: Logger }) {
+  const { logger } = arguments_;
+  return {
+    command: "init",
+    describe: "Create a new Epikrypsi volume",
+    handler: async () => {
+      logger.info("Creating a new Epikrypsi volume...");
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      logger.info("Creating a new Epikrypsi volume DONE!");
+    },
+  };
+}

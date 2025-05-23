@@ -22,11 +22,10 @@ const config: ConfigArray = tsPlugin.config(
       },
     },
     rules: {
-      "func-style": ["error", "expression"],
+      "func-style": ["error", "declaration", { allowArrowFunctions: true }],
       "no-restricted-syntax": ["off", "ForOfStatement"],
       "no-console": ["error"],
       "prefer-template": "error",
-      "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/consistent-type-definitions": ["error", "type"],
     },
   },
