@@ -4,11 +4,11 @@ import { PartialAndUndefined } from "./utility_types.ts";
 
 export type PasswordProvider = {
   getPassword(options?: PartialAndUndefined<GetPasswordOptions>): Promise<string>;
-}
+};
 
 export type GetPasswordOptions = {
   prompt: string;
-}
+};
 
 export function resolveGetPasswordOptions(
   options?: PartialAndUndefined<GetPasswordOptions>,
@@ -46,7 +46,7 @@ export class ReadlinePasswordProvider implements PasswordProvider {
     const userInput = await read({
       input: this.#input,
       output: this.#output,
-      prompt: `${prompt  }: `,
+      prompt: `${prompt}: `,
       silent: true,
     });
 

@@ -37,7 +37,7 @@ export async function main(): Promise<void> {
           }),
       handler: argv => {
         const { file, password } = argv;
-        const passwordProvider = passwordProviderFromArguments({ password });
+        const passwordProvider = passwordProviderFromArguments({ password }, logger);
         return runInitCommand({ logger, file, passwordProvider });
       },
     })
@@ -51,19 +51,32 @@ export async function main(): Promise<void> {
   }
 }
 
-function passwordProviderFromArguments(arguments_: {
-  password: string | undefined;
-}): PasswordProvider {
+function passwordProviderFromArguments(
+  arguments_: {
+    password: string | undefined;
+  },
+  logger: Logger,
+): PasswordProvider {
   const { password } = arguments_;
   const trimmedPassword = password?.trim();
-  return typeof trimmedPassword === "string" && trimmedPassword.length > 0 ? new ConstantPasswordProvider(trimmedPassword) : new ReadlinePasswordProvider({ input: process.stdin, output: process.stdout });
+  if (typeof trimmedPassword === "string" && trimmedPassword.length > 0) {
+    logger.warn(
+      `WARNING: specifying a password on the command line is insecure and should not be done ` +
+        `with real passwords that require secrecy. This is because command line arguments are ` +
+        `often stored in plain text in "history" files by shells, and also are usually visible ` +
+        `by all users in the operating system's list of processes, such as the output of the ` +
+        `"top" and "ps" commands on Linux. Prefer using an interactive prompt instead.`,
+    );
+    return new ConstantPasswordProvider(trimmedPassword);
+  }
+  return new ReadlinePasswordProvider({ input: process.stdin, output: process.stdout });
 }
 
 type InitCommandArguments = {
   logger: Logger;
   file: string;
   passwordProvider: PasswordProvider;
-}
+};
 
 async function runInitCommand(arguments_: InitCommandArguments): Promise<void> {
   const { logger, file, passwordProvider } = arguments_;
