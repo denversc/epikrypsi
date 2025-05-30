@@ -1,6 +1,6 @@
 import { read } from "read";
 
-import { PartialAndUndefined } from "./utility_types.ts";
+import { type PartialAndUndefined } from "./utility_types.ts";
 
 export type PasswordProvider = {
   getPassword(options?: PartialAndUndefined<GetPasswordOptions>): Promise<string>;

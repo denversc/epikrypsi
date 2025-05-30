@@ -1,4 +1,6 @@
 {
+  "files": [],
+  "include": [],
   "compilerOptions": {
     "composite": true,
     "rootDir": ".",
