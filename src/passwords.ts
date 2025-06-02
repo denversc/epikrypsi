@@ -2,13 +2,13 @@ import { read } from "read";
 
 import { type PartialAndUndefined } from "./utility_types.ts";
 
-export type PasswordProvider = {
+export interface PasswordProvider {
   getPassword(options?: PartialAndUndefined<GetPasswordOptions>): Promise<string>;
-};
+}
 
-export type GetPasswordOptions = {
+export interface GetPasswordOptions {
   prompt: string;
-};
+}
 
 export function resolveGetPasswordOptions(
   options?: PartialAndUndefined<GetPasswordOptions>,

@@ -26,7 +26,16 @@ const config: ConfigArray = tsPlugin.config(
       "no-restricted-syntax": ["off", "ForOfStatement"],
       "no-console": ["error"],
       "prefer-template": "error",
-      "@typescript-eslint/consistent-type-definitions": ["error", "type"],
+      "security/detect-non-literal-fs-filename": "off",
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        {
+          allowBoolean: true,
+          allowNullish: true,
+          allowNumber: true,
+        },
+      ],
+      "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
     },
   },
   {
@@ -37,8 +46,15 @@ const config: ConfigArray = tsPlugin.config(
     rules: {
       "unicorn/empty-brace-spaces": "off",
       "unicorn/no-null": "off",
+      "unicorn/filename-case": [
+        "error",
+        {
+          "case": "snakeCase",
+        },
+      ],
     },
   },
+
   {
     plugins: {
       "simple-import-sort": simpleImportSortPlugin,

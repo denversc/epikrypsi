@@ -2,11 +2,11 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 
 import { version } from "../package.json" with { type: "json" };
+import { type Commands } from "./command_types.ts";
 import { type Logger } from "./logging.ts";
 import { ConstantPasswordProvider, ReadlinePasswordProvider } from "./passwords.ts";
-import { type Commands } from "./command_types.ts";
 
-export default async function parseArgs(commands: Commands, logger: Logger): Promise<void> {
+export default async function parseArguments(commands: Commands, logger: Logger): Promise<void> {
   const yargsParser = yargs(hideBin(process.argv));
 
   const yargsCommands = yargsParser

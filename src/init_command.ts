@@ -1,14 +1,11 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
+
+import type { CommandFunctionArguments, InitArguments } from "./command_types.ts";
 import { AsyncDisposableStack } from "./disposable.ts";
-import {
-  type Arguments,
-  type CommandFunctionArguments,
-  type CommandFunction,
-} from "./command_types.ts";
 
 export default async function runInitCommand(
-  arguments_: CommandFunctionArguments<Arguments.Init>,
+  arguments_: CommandFunctionArguments<InitArguments>,
 ): Promise<void> {
   const {
     args: { file, passwordProvider },

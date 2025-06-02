@@ -1,9 +1,9 @@
 import signale, { type SignaleConfig } from "signale";
 
-export type Logger = {
-  info: (...arguments_: unknown[]) => unknown;
-  warn: (...arguments_: unknown[]) => unknown;
-};
+export interface Logger {
+  info(...arguments_: unknown[]): unknown;
+  warn(...arguments_: unknown[]): unknown;
+}
 
 function createSignaleConfig(): SignaleConfig {
   return {

@@ -4,7 +4,7 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": ".",
-    "outDir": "build/default",
+    "outDir": "build",
 
     "lib": ["ESNext"],
     "target": "ESNext",
@@ -14,12 +14,12 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "noEmit": true,
 
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": true,
     "allowUnusedLabels": false,
     "alwaysStrict": true,
+    "emitDeclarationOnly": true,
     "erasableSyntaxOnly": true,
     "esModuleInterop": true,
     "exactOptionalPropertyTypes": true,
