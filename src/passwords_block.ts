@@ -1,4 +1,4 @@
-interface PasswordRecord {
+export interface PasswordRecord {
   /** The 16-byte password salt. */
   salt: Uint8Array;
   /** The 12-byte initialization vector for aes-256-gcm. */
@@ -7,6 +7,8 @@ interface PasswordRecord {
   authTag: Uint8Array;
   /** The 32-byte encrypted master key. */
   masterKey: Uint8Array;
+  /** The 52-byte padding containing random data */
+  padding: Uint8Array;
 }
 
 export function* passwordRecordsFromPasswordBlock(block: Uint8Array): Generator<PasswordRecord> {
@@ -31,11 +33,13 @@ export function* passwordRecordsFromPasswordBlock(block: Uint8Array): Generator<
     const ivOffset = offset + IV_OFFSET;
     const authTagOffset = offset + AUTH_TAG_OFFSET;
     const masterKeyOffset = offset + MASTER_KEY_OFFSET;
+    const paddingOffset = offset + PADDING_OFFSET;
     yield {
       salt: block.slice(saltOffset, saltOffset + SALT_SIZE),
       iv: block.slice(ivOffset, ivOffset + IV_SIZE),
       authTag: block.slice(authTagOffset, authTagOffset + AUTH_TAG_SIZE),
       masterKey: block.slice(masterKeyOffset, masterKeyOffset + MASTER_KEY_SIZE),
+      padding: block.slice(paddingOffset, paddingOffset + PADDING_SIZE),
     };
   }
 }
@@ -47,7 +51,9 @@ const SALT_SIZE = 16 as const;
 const IV_SIZE = 12 as const;
 const AUTH_TAG_SIZE = 16 as const;
 const MASTER_KEY_SIZE = 32 as const;
+const PADDING_SIZE = 52 as const;
 const SALT_OFFSET = 0 as const;
 const IV_OFFSET = SALT_OFFSET + SALT_SIZE;
 const AUTH_TAG_OFFSET = IV_OFFSET + IV_SIZE;
 const MASTER_KEY_OFFSET = AUTH_TAG_OFFSET + AUTH_TAG_SIZE;
+const PADDING_OFFSET = MASTER_KEY_OFFSET + MASTER_KEY_SIZE;
