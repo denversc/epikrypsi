@@ -64,6 +64,15 @@ const config: ConfigArray = tsPlugin.config(
       "simple-import-sort/exports": "error",
     },
   },
+
+  {
+    files: ["test/**/*.ts"],
+    rules: {
+      // Ignore non-literal regular expression patterns in tests, as tests often use dynamic
+      // patterns which is _not_ a security concern.
+      "security/detect-non-literal-regexp": "off",
+    },
+  },
 );
 
 export default config;

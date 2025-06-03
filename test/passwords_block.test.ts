@@ -1,27 +1,34 @@
 import { describe, expect, test } from "bun:test";
 import fc from "fast-check";
 
-import { type PasswordRecord,passwordRecordsFromPasswordBlock } from "../src/passwords_block.ts";
+import {
+  passwordBlockFromRecords,
+  type PasswordRecord,
+  passwordRecordsFromBlock,
+} from "../src/passwords_block.ts";
 
 describe("passwords_block.ts.ts [gmpzp3ap7p]", () => {
-  describe("passwordRecordsFromPasswordBlock() [k5ykrs8gw6]", () => {
+  describe("passwordRecordsFromBlock() [k5ykrs8gw6]", () => {
     test("should throw if block length is not 4096 bytes [we7cpk4xff]", () => {
-      fc.property(uint8ArrayLengthNot4096Arb, array => {
-        expect(() => {
-          passwordRecordsFromPasswordBlock(array);
-        }).toThrowError(
-          `unexpected block.length for password block: ${array.length} ` +
-            `(expected: 4096) [mtcbkdmenk]`,
-        );
-      });
+      fc.assert(
+        fc.property(uint8ArrayLengthNot4096Arb, block => {
+          const function_ = () => passwordRecordsFromBlock(block);
+          expect(function_).toThrowError(/\bmtcbkdmenk\b/);
+          expect(function_).toThrowError(/\binvalid block.length\b/i);
+          expect(function_).toThrowError(new RegExp(`\\b${block.length}\\b`));
+          expect(function_).toThrowError(/\bexpected: 4096\b/i);
+        }),
+      );
     });
 
     test("should correctly parse blocks [d7a5cvqgtd]", () => {
-      fc.property(fc.array(passwordRecordArb, { minLength: 32, maxLength: 32 }), array => {
-        const block = passwordBlockFromRecords(array);
-        const parsedRecords = [...passwordRecordsFromPasswordBlock(block)];
-        expect(parsedRecords).toEqual(array);
-      });
+      fc.assert(
+        fc.property(fc.array(passwordRecordArb, { minLength: 32, maxLength: 32 }), array => {
+          const block = passwordBlockFromRecords(array);
+          const parsedRecords = [...passwordRecordsFromBlock(block)];
+          expect(parsedRecords).toEqual(array);
+        }),
+      );
     });
   });
 });
@@ -44,17 +51,3 @@ const passwordRecordArb = fc.record<PasswordRecord>({
   masterKey: fc.uint8Array({ minLength: 32, maxLength: 32 }),
   padding: fc.uint8Array({ minLength: 52, maxLength: 52 }),
 });
-
-function passwordBlockFromRecords(passwordRecords: PasswordRecord[]): Uint8Array {
-  const result = new Uint8Array(passwordRecords.length * 128);
-  for (const [index, passwordRecord] of passwordRecords.entries()) {
-    const record = passwordRecord;
-    const offset = index * 128;
-    result.set(record.salt, offset + 0);
-    result.set(record.iv, offset + 16);
-    result.set(record.authTag, offset + 28);
-    result.set(record.masterKey, offset + 44);
-    result.set(record.padding, offset + 76);
-  }
-  return result;
-}
