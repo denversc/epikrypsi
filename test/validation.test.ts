@@ -7,7 +7,13 @@ import {
   isIncorrectLength,
   isIncorrectType,
 } from "../src/validation.ts";
-import { nonEmptyArray, notNumber, notString } from "./testing/fastcheck.ts";
+import {
+  nonArrayExamples,
+  nonEmptyArray,
+  notArrayOrIncludesTypesOtherThan,
+  notNumber,
+  notString,
+} from "./testing/fastcheck.ts";
 
 describe("validation.test.ts [ym23cpzkck]", () => {
   describe("isIncorrectType() [jtj23jh3e6]", () => {
@@ -61,11 +67,14 @@ const invalidIncorrectTypeArb = fc.oneof(
   fc.record({ expected: fc.string(), actual: notString() }),
   fc.record({ expected: nonEmptyArray(fc.string()), actual: notString() }),
   fc.record({ expected: fc.constant([]), actual: fc.string() }),
-  fc.record({ expected: notString(), actual: fc.string() }),
+  fc.record({
+    expected: notString().filter(notArrayOrIncludesTypesOtherThan("string")),
+    actual: fc.string(),
+  }),
 );
 
 function invalidIncorrectTypeExamples(): unknown[] {
-  return [[null], [undefined], [Symbol()], [true], [false], [42], [42n], [{}], ["foobar"]];
+  return nonArrayExamples().map(value => [value]);
 }
 
 const validIncorrectLengthArb: fc.Arbitrary<IncorrectLength> = fc.oneof(
@@ -82,9 +91,12 @@ const invalidIncorrectLengthArb = fc.oneof(
   fc.record({ expected: fc.integer(), actual: notNumber() }),
   fc.record({ expected: nonEmptyArray(fc.integer()), actual: notNumber() }),
   fc.record({ expected: fc.constant([]), actual: fc.integer() }),
-  fc.record({ expected: notNumber(), actual: fc.integer() }),
+  fc.record({
+    expected: notNumber().filter(notArrayOrIncludesTypesOtherThan("number")),
+    actual: fc.integer(),
+  }),
 );
 
 function invalidIncorrectLengthExamples(): unknown[] {
-  return [[null], [undefined], [Symbol()], [true], [false], [42], [42n], [{}], ["foobar"]];
+  return nonArrayExamples().map(value => [value]);
 }

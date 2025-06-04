@@ -1,3 +1,5 @@
+import { type IncorrectLength, type IncorrectType, PROPERTY_MISSING } from "./validation.ts";
+
 export interface PasswordRecord {
   /** The 16-byte password salt. */
   salt: Uint8Array;
@@ -9,6 +11,80 @@ export interface PasswordRecord {
   masterKey: Uint8Array;
   /** The 52-byte padding containing random data */
   padding: Uint8Array;
+}
+
+const passwordRecordProperties: Readonly<
+  Array<Readonly<{ propertyName: keyof PasswordRecord; expectedLength: number }>>
+> = Object.freeze([
+  Object.freeze({ propertyName: "salt", expectedLength: 16 }),
+  Object.freeze({ propertyName: "iv", expectedLength: 12 }),
+  Object.freeze({ propertyName: "authTag", expectedLength: 16 }),
+  Object.freeze({ propertyName: "masterKey", expectedLength: 32 }),
+  Object.freeze({ propertyName: "padding", expectedLength: 52 }),
+]);
+
+/**
+ * The return type from of {@link validatePasswordRecord} that contains validation erorrs
+ * for individual properties of the given value.
+ *
+ * If a property is missing then the value of its corresponding property in {@link PasswordRecord}
+ * was valid; otherwise, the value indicates the reason why it was invalid.
+ *
+ * If this object has no properties then the given value completely satisfied
+ * {@link PasswordRecord} and its invariants.
+ */
+export type PasswordRecordPropertyErrors = Partial<
+  Record<keyof PasswordRecord, typeof PROPERTY_MISSING | IncorrectLength | IncorrectType>
+>;
+
+/**
+ * The return type of {@link validatePasswordRecord}.
+ *
+ * If {@link IncorrectType} then the argument was either `null` or not an `object`.
+ * Otherwise, a record of validation errors; if the record has no properties
+ * then validation succeeded.
+ */
+export type ValidatePasswordRecordResult = IncorrectType | PasswordRecordPropertyErrors;
+
+export function validatePasswordRecord(value: unknown): ValidatePasswordRecordResult {
+  if (typeof value !== "object") {
+    return { expected: "object", actual: typeof value } satisfies IncorrectType;
+  } else if (value === null) {
+    return { expected: "object", actual: "null" } satisfies IncorrectType;
+  }
+
+  const errors: PasswordRecordPropertyErrors = {};
+  for (const { propertyName, expectedLength } of passwordRecordProperties) {
+    const error = validatePasswordRecordProperty(value, propertyName, expectedLength);
+    if (error) {
+      // eslint-disable-next-line security/detect-object-injection
+      errors[propertyName] = error;
+    }
+  }
+  return errors;
+}
+
+function validatePasswordRecordProperty(
+  value: Readonly<Partial<PasswordRecord>>,
+  propertyName: keyof PasswordRecord,
+  expectedLength: number,
+) {
+  if (propertyName in value) {
+    // eslint-disable-next-line security/detect-object-injection
+    const propertyValue = value[propertyName] as unknown;
+    if (typeof propertyValue !== "object") {
+      return { expected: "object", actual: typeof value } satisfies IncorrectType;
+    } else if (propertyValue === null) {
+      return { expected: "object", actual: "null" } satisfies IncorrectType;
+    } else if (!(propertyValue instanceof Uint8Array)) {
+      return { expected: "Uint8Array", actual: value.constructor.name } satisfies IncorrectType;
+    } else if (propertyValue.length !== expectedLength) {
+      return { expected: "Uint8Array", actual: value.constructor.name } satisfies IncorrectType;
+    }
+  } else {
+    return PROPERTY_MISSING;
+  }
+  return null;
 }
 
 export function passwordRecordsFromBlock(block: Uint8Array): PasswordRecord[] {

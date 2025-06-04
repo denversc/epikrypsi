@@ -1,4 +1,18 @@
-import { anything, type Arbitrary, array, type ArrayConstraints } from "fast-check";
+import {
+  anything,
+  type Arbitrary,
+  array,
+  type ArrayConstraints,
+  bigInt,
+  boolean,
+  constant,
+  double,
+  object,
+  oneof,
+  string,
+} from "fast-check";
+
+import { allTypeofResults, type TypeofResult } from "./types.ts";
 
 export function nonEmptyArray<T>(
   arb: Arbitrary<T>,
@@ -14,4 +28,89 @@ export function notString(): Arbitrary<Exclude<unknown, string>> {
 
 export function notNumber(): Arbitrary<Exclude<unknown, number>> {
   return anything().filter(value => typeof value !== "number");
+}
+
+/**
+ * Returns an {@link Arbitrary} that generates values of the given type.
+ */
+export function valueOfType(typeName: TypeofResult): Arbitrary<unknown> {
+  switch (typeName) {
+    case "bigint": {
+      return bigInt();
+    }
+    case "string": {
+      return string();
+    }
+    case "number": {
+      return double();
+    }
+    case "function": {
+      return constant(() => {});
+    }
+    case "symbol": {
+      return constant(Symbol("symth9tk3z"));
+    }
+    case "boolean": {
+      return boolean();
+    }
+    case "undefined": {
+      const undefinedValue = undefined;
+      return constant(undefinedValue);
+    }
+    case "object": {
+      return object();
+    }
+    default: {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      throw new Error(`unsupported typeName: ${typeName} [swc3b88gvv]`);
+    }
+  }
+}
+
+/**
+ * Returns an {@link Arbitrary} that generates values of all types _except_ the given type.
+ */
+export function valueOfNotType(typeName: TypeofResult): Arbitrary<unknown> {
+  const arbitraries: Array<Arbitrary<unknown>> = [];
+  for (const typeofResult of allTypeofResults) {
+    if (typeofResult !== typeName) {
+      arbitraries.push(valueOfType(typeofResult));
+    }
+  }
+  if (arbitraries.length === allTypeofResults.length) {
+    throw new Error(`unsupported typeName: ${typeName} [cewms23445]`);
+  }
+  return oneof(...arbitraries);
+}
+
+/**
+ * Returns a "filter" function that rejects non-empty arrays where each element's `typeof` operator
+ * returns the given value.
+ *
+ * This can be useful, for example, when generating "anything" _except_ a non-empty array containing
+ * exclusively a given type.
+ *
+ * @return a function that is appropriate for use as a `filter` predicate for `Arbitrary.filter()`
+ * that filters elements as defined above.
+ */
+export function notArrayOrIncludesTypesOtherThan(
+  typeName: TypeofResult,
+): (value: unknown) => boolean {
+  return (value: unknown) => {
+    if (!Array.isArray(value)) {
+      return true;
+    } else if (value.length === 0) {
+      return true;
+    } else {
+      return value.some(item => typeof item !== typeName);
+    }
+  };
+}
+
+/**
+ * Returns an array that contains a bunch of example values that do NOT satisfy
+ * {@link Array.isArray}.
+ */
+export function nonArrayExamples(): unknown[] {
+  return [null, undefined, Symbol(), true, false, 42, 42n, {}, "foobar", () => {}];
 }
