@@ -68,9 +68,8 @@ const config: ConfigArray = tsPlugin.config(
   {
     files: ["test/**/*.ts"],
     rules: {
-      // Ignore non-literal regular expression patterns in tests, as tests often use dynamic
-      // patterns which is _not_ a security concern.
       "security/detect-non-literal-regexp": "off",
+      "security/detect-object-injection": "off",
     },
   },
 );

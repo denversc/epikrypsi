@@ -29,7 +29,7 @@ function toCommaSeparatedOrString<T extends string | number>(value: T | T[]): st
   if (!Array.isArray(value)) {
     return `${value}`;
   }
-  return commaSeparatedListFormat.format(value.map(item => `${value}`));
+  return commaSeparatedListFormat.format(value.map(item => `${item}`));
 }
 
 /**
@@ -154,7 +154,11 @@ function validatePasswordRecordProperty(
     } else if (propertyValue === null) {
       return { expected: "object", actual: "null" } satisfies IncorrectType;
     } else if (!(propertyValue instanceof Uint8Array)) {
-      return { expected: "Uint8Array", actual: value.constructor.name } satisfies IncorrectType;
+      const constructorName = (value as unknown)?.constructor?.name ?? "<null prototype>";
+      return {
+        expected: "Uint8Array",
+        actual: constructorName,
+      } satisfies IncorrectType;
     } else if (propertyValue.length !== expectedLength) {
       return { expected: expectedLength, actual: propertyValue.length } satisfies IncorrectLength;
     }
