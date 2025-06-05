@@ -1,4 +1,5 @@
-import { Arbitrary, record, uint8Array } from "fast-check";
+import { type Arbitrary, record, uint8Array, constantFrom } from "fast-check";
+
 
 import { type PasswordRecord } from "../src/password_record.ts";
 import { assertUnreachable } from "../src/typing.ts";
@@ -67,3 +68,117 @@ export function passwordRecordPropertyValueArb(
     }
   }
 }
+
+/**
+ * The reason that the value of a {@link PasswordRecord} property is invalid.
+ */
+export type PasswordRecordPropertyValidity = 
+  
+  /**
+   * The value is in fact valid; that is, it is an instance of
+   * {@link Uint8Array} with the expected length.
+   */
+  | "valid"
+  
+  /**
+   * The property is missing, and is not present on the object.
+   */
+  | "missing"
+  
+  /**
+   * The type of the value, according to the `typeof` operator` is incorrect;
+   * that is, it is something other than `"object"`.
+   */
+  | "incorrect typeof"
+  
+  /**
+   * The value does not satisfy `instanceof Uint8Array`.
+   */
+  | "incorrect instanceof"
+  
+  /**
+   * The value is indeed a {@link Uint8Array} but its length differs from the
+   * expected length.
+   */
+  | "incorrect length";
+
+/**
+ * The set of all valid values for {@link PasswordRecordPropertyValidity}.
+ */
+export const allPasswordRecordPropertyValidities: readonly PasswordRecordPropertyValidity[] = [
+  "valid",
+  "missing",
+  "incorrect instanceof",
+  "incorrect length",
+];
+
+/**
+ * An {@link Arbitrary} that generates all {@link PasswordRecordPropertyValidity} values
+ * with equal probability.
+ */
+export const passwordRecordPropertyValidityArb: Arbitrary<PasswordRecordPropertyValidity> = constantFrom(...allPasswordRecordPropertyValidities);
+
+/**
+ * An {@link Arbitrary} that produces objects with the all of the properties defined by
+ * {@link PasswordRecord} but with {@link PasswordRecordPropertyValidity} values.
+ * 
+ * This can be useful
+ */
+export const passwordRecordWithValiditiesArb: Arbitrary<Record<keyof PasswordRecord, PasswordRecordPropertyValidity>> =
+  record({
+    salt: passwordRecordPropertyValidityArb,
+    iv: passwordRecordPropertyValidityArb,
+    authTag: passwordRecordPropertyValidityArb,
+    masterKey: passwordRecordPropertyValidityArb,
+    padding: passwordRecordPropertyValidityArb,
+  })
+
+/**
+ * An {@link Arbitrary} that produces non-null objects where one, or more, of
+ * its properties violate the requirements of {@link PasswordRecord}.
+ */
+const passwordRecordWithInvalidPropertiesArb = fc
+  .record({
+    salt: fc.constantFrom(...allPasswordRecordPropertyStates),
+    iv: fc.constantFrom(...allPasswordRecordPropertyStates),
+    authTag: fc.constantFrom(...allPasswordRecordPropertyStates),
+    masterKey: fc.constantFrom(...allPasswordRecordPropertyStates),
+    padding: fc.constantFrom(...allPasswordRecordPropertyStates),
+  })
+  .filter(record => Object.values(record).some(value => value !== "valid"))
+  .chain(states => {
+    const recordSpec: Partial<Record<keyof PasswordRecord, Arbitrary<unknown>>> = {};
+    for (const [propertyName, propertyState] of Object.entries(states)) {
+      assertIsPasswordRecordPropertyName(propertyName);
+      switch (propertyState) {
+        case "valid": {
+          recordSpec[propertyName] = passwordRecordPropertyValueArb(propertyName);
+          break;
+        }
+        case "missing": {
+          break;
+        }
+        case "incorrect type": {
+          recordSpec[propertyName] = absolutelyAnything().filter(
+            item => !(item instanceof Uint8Array),
+          );
+          break;
+        }
+        case "incorrect length": {
+          const validLength = PasswordRecordArrayLengths[propertyName];
+          recordSpec[propertyName] = fc.uint8Array().filter(array => array.length !== validLength);
+          break;
+        }
+        default: {
+          assertUnreachable(
+            propertyState,
+            "internal error: invalid propertyState: %s [wx5zaea8n3]",
+          );
+        }
+      }
+    }
+    return fc.record({
+      states: fc.constant<Record<keyof PasswordRecord, PasswordRecordPropertyState>>(states),
+      passwordRecord: fc.record<Partial<Record<keyof PasswordRecord, unknown>>>(recordSpec),
+    });
+  });
