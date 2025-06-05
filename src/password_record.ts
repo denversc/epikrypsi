@@ -1,4 +1,11 @@
-import { type IncorrectLength, type IncorrectType, PROPERTY_MISSING } from "./validation.ts";
+import { assertUnreachable } from "./typing.ts";
+import {
+  type IncorrectLength,
+  type IncorrectType,
+  isIncorrectLength,
+  isIncorrectType,
+  PROPERTY_MISSING,
+} from "./validation.ts";
 
 export interface PasswordRecord {
   /** The 16-byte password salt. */
@@ -11,6 +18,76 @@ export interface PasswordRecord {
   masterKey: Uint8Array;
   /** The 52-byte padding containing random data */
   padding: Uint8Array;
+}
+
+const commaSeparatedListFormat = new Intl.ListFormat(undefined, {
+  type: "disjunction",
+  style: "long",
+});
+
+function toCommaSeparatedOrString<T>(value: T | T[]): string {
+  if (!Array.isArray(value)) {
+    return Bun.inspect(value);
+  }
+  return commaSeparatedListFormat.format(value.map(item => Bun.inspect(item)));
+}
+
+/**
+ * Asserts that the given value satisfies the {@link PasswordRecord} interface and conforms
+ * to all of its requirements, namely, that each {@link Uint8Array} has the expected length.
+ *
+ * Throws {@link InvalidPasswordRecordError} if the given value is _not_ a valid
+ * {@link PasswordRecord}. Returns normally otherwise.
+ */
+export function assertValidPasswordRecord(value: unknown): asserts value is PasswordRecord {
+  const result = validatePasswordRecord(value);
+  if (isIncorrectType(result)) {
+    throw new InvalidPasswordRecordError(
+      `the type of the given value is not compatible with PasswordRecord: ` +
+        `${result.actual} (expected: ${toCommaSeparatedOrString(result.expected)}) [cx76rqp7bn]`,
+    );
+  }
+  const errors: string[] = [];
+
+  for (const [propertyName, propertyError] of Object.entries(result)) {
+    if (propertyError === PROPERTY_MISSING) {
+      errors.push(`property "${propertyName}" is missing [txbb3wetfr]`);
+    } else if (isIncorrectType(propertyError)) {
+      errors.push(
+        `property "${propertyName}" has the wrong type: ` +
+          `${propertyError.actual} ` +
+          `(expected: ${toCommaSeparatedOrString(propertyError.expected)}) [d435k8gx4v]`,
+      );
+    } else if (isIncorrectLength(propertyError)) {
+      errors.push(
+        `property "${propertyName}" has the wrong length: ` +
+          `${propertyError.actual} ` +
+          `(expected: ${toCommaSeparatedOrString(propertyError.expected)}) [ba8h2qefz5]`,
+      );
+    } else {
+      assertUnreachable(propertyError, "internal error: invalid propertyError: %s [jv7tvgdtcg]");
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new InvalidPasswordRecordError(
+      `the given value is not a valid PasswordRecord: ` + `${errors.join("; ")} [z8zh7y6m6z]`,
+    );
+  }
+}
+
+/**
+ * The exception thrown by {@link assertValidPasswordRecord} if one or more of
+ * its assertion checks fail.
+ */
+export class InvalidPasswordRecordError extends Error {
+  declare readonly name: "InvalidPasswordRecordError";
+
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidPasswordRecordError";
+    Object.setPrototypeOf(this, InvalidPasswordRecordError.prototype);
+  }
 }
 
 const passwordRecordProperties: Readonly<
@@ -33,7 +110,7 @@ const passwordRecordProperties: Readonly<
  * If this object has no properties then the given value completely satisfied
  * {@link PasswordRecord} and its invariants.
  */
-export type PasswordRecordPropertyErrors = Partial<
+type PasswordRecordPropertyErrors = Partial<
   Record<keyof PasswordRecord, typeof PROPERTY_MISSING | IncorrectLength | IncorrectType>
 >;
 
@@ -44,9 +121,9 @@ export type PasswordRecordPropertyErrors = Partial<
  * Otherwise, a record of validation errors; if the record has no properties
  * then validation succeeded.
  */
-export type ValidatePasswordRecordResult = IncorrectType | PasswordRecordPropertyErrors;
+type ValidatePasswordRecordResult = IncorrectType | PasswordRecordPropertyErrors;
 
-export function validatePasswordRecord(value: unknown): ValidatePasswordRecordResult {
+function validatePasswordRecord(value: unknown): ValidatePasswordRecordResult {
   if (typeof value !== "object") {
     return { expected: "object", actual: typeof value } satisfies IncorrectType;
   } else if (value === null) {
@@ -79,76 +156,10 @@ function validatePasswordRecordProperty(
     } else if (!(propertyValue instanceof Uint8Array)) {
       return { expected: "Uint8Array", actual: value.constructor.name } satisfies IncorrectType;
     } else if (propertyValue.length !== expectedLength) {
-      return { expected: "Uint8Array", actual: value.constructor.name } satisfies IncorrectType;
+      return { expected: expectedLength, actual: propertyValue.length } satisfies IncorrectLength;
     }
   } else {
     return PROPERTY_MISSING;
   }
   return null;
 }
-
-export function passwordRecordsFromBlock(block: Uint8Array): PasswordRecord[] {
-  if (block.length !== PASSWORD_BLOCK_SIZE) {
-    throw new Error(
-      `invalid block.length: ${block.length} (expected: ${PASSWORD_BLOCK_SIZE}) [mtcbkdmenk]`,
-    );
-  }
-
-  const records: PasswordRecord[] = [];
-  for (let recordIndex = 0; recordIndex < NUM_PASSWORD_RECORDS_PER_BLOCK; recordIndex++) {
-    const offset = recordIndex * PASSWORD_RECORD_SIZE;
-    const saltOffset = offset + SALT_OFFSET;
-    const ivOffset = offset + IV_OFFSET;
-    const authTagOffset = offset + AUTH_TAG_OFFSET;
-    const masterKeyOffset = offset + MASTER_KEY_OFFSET;
-    const paddingOffset = offset + PADDING_OFFSET;
-    const record = {
-      salt: block.subarray(saltOffset, saltOffset + SALT_SIZE),
-      iv: block.subarray(ivOffset, ivOffset + IV_SIZE),
-      authTag: block.subarray(authTagOffset, authTagOffset + AUTH_TAG_SIZE),
-      masterKey: block.subarray(masterKeyOffset, masterKeyOffset + MASTER_KEY_SIZE),
-      padding: block.subarray(paddingOffset, paddingOffset + PADDING_SIZE),
-    };
-    records.push(record);
-  }
-
-  return records;
-}
-
-export function passwordBlockFromRecords(records: PasswordRecord[]): Uint8Array {
-  if (records.length !== NUM_PASSWORD_RECORDS_PER_BLOCK) {
-    throw new Error(
-      `invalid records.length: ${records.length} ` +
-        `(expected: ${NUM_PASSWORD_RECORDS_PER_BLOCK}) [e9eww6vpbx]`,
-    );
-  }
-
-  const block = new Uint8Array(PASSWORD_BLOCK_SIZE);
-
-  for (const [index, record] of records.entries()) {
-    const offset = index * PASSWORD_RECORD_SIZE;
-    block.set(record.salt, offset + SALT_OFFSET);
-    block.set(record.iv, offset + IV_OFFSET);
-    block.set(record.authTag, offset + AUTH_TAG_OFFSET);
-    block.set(record.masterKey, offset + MASTER_KEY_OFFSET);
-    block.set(record.padding, offset + PADDING_OFFSET);
-  }
-
-  return block;
-}
-
-const PASSWORD_BLOCK_SIZE = 4096 as const;
-const PASSWORD_RECORD_SIZE = 128 as const;
-const NUM_PASSWORD_RECORDS_PER_BLOCK = 32 as const;
-
-const SALT_SIZE = 16 as const;
-const IV_SIZE = 12 as const;
-const AUTH_TAG_SIZE = 16 as const;
-const MASTER_KEY_SIZE = 32 as const;
-const PADDING_SIZE = 52 as const;
-
-const SALT_OFFSET = 0 as const;
-const IV_OFFSET = SALT_OFFSET + SALT_SIZE;
-const AUTH_TAG_OFFSET = IV_OFFSET + IV_SIZE;
-const MASTER_KEY_OFFSET = AUTH_TAG_OFFSET + AUTH_TAG_SIZE;
-const PADDING_OFFSET = MASTER_KEY_OFFSET + MASTER_KEY_SIZE;

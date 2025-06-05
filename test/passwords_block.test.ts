@@ -1,11 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import fc from "fast-check";
 
-import {
-  passwordBlockFromRecords,
-  type PasswordRecord,
-  passwordRecordsFromBlock,
-} from "../src/passwords_block.ts";
+import { passwordBlockFromRecords, passwordRecordsFromBlock } from "../src/password_block.ts";
+import { type PasswordRecord } from "../src/password_record.ts";
 
 describe("passwords_block.ts.ts [gmpzp3ap7p]", () => {
   describe("passwordRecordsFromBlock() [k5ykrs8gw6]", () => {
