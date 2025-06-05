@@ -8,6 +8,7 @@ import {
   isIncorrectType,
 } from "../src/validation.ts";
 import {
+  absolutelyAnything,
   nonArrayExamples,
   nonEmptyArray,
   notArrayOrIncludesTypesOtherThan,
@@ -59,7 +60,7 @@ const validIncorrectTypeArb: fc.Arbitrary<IncorrectType> = fc.oneof(
 );
 
 const invalidIncorrectTypeArb = fc.oneof(
-  fc.anything().filter(value => value === null || typeof value !== "object"),
+  absolutelyAnything().filter(value => value === null || typeof value !== "object"),
   fc.object().filter(value => !("expected" in value && "actual" in value)),
   fc.record({ expected: fc.string() }),
   fc.record({ expected: nonEmptyArray(fc.string()) }),
@@ -83,7 +84,7 @@ const validIncorrectLengthArb: fc.Arbitrary<IncorrectLength> = fc.oneof(
 );
 
 const invalidIncorrectLengthArb = fc.oneof(
-  fc.anything().filter(value => value === null || typeof value !== "object"),
+  absolutelyAnything().filter(value => value === null || typeof value !== "object"),
   fc.object().filter(value => !("expected" in value && "actual" in value)),
   fc.record({ expected: fc.integer() }),
   fc.record({ expected: nonEmptyArray(fc.integer()) }),

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import fc from "fast-check";
 
 import {
+  absolutelyAnything,
   nonArrayExamples,
   nonEmptyArray,
   notArrayOrIncludesTypesOtherThan,
@@ -15,7 +16,7 @@ import { allTypeofResults } from "./types.ts";
 describe("fastcheck.test.ts [wzvdygx2g6]", () => {
   test("nonEmptyArray() should generate non-empty arrays [e3yddmdb42]", () => {
     fc.assert(
-      fc.property(nonEmptyArray(fc.anything()), value => {
+      fc.property(nonEmptyArray(absolutelyAnything()), value => {
         expect(value.length).toBeGreaterThan(0);
       }),
     );

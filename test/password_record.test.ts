@@ -9,7 +9,7 @@ import {
   PasswordRecordArrayLengths,
   passwordRecordPropertyValueArb,
 } from "./password_record.testing.ts";
-import { valueOfNotType } from "./testing/fastcheck.ts";
+import { absolutelyAnything,valueOfNotType } from "./testing/fastcheck.ts";
 
 describe("password_record.test.ts [g5y5m67f7m]", () => {
   describe("assertValidPasswordRecord() [kfhm2xn5h8]", () => {
@@ -131,7 +131,9 @@ const invalidPasswordRecordArb = fc
           break;
         }
         case "incorrect type": {
-          recordSpec[propertyName] = fc.anything().filter(item => !(item instanceof Uint8Array));
+          recordSpec[propertyName] = absolutelyAnything().filter(
+            item => !(item instanceof Uint8Array),
+          );
           break;
         }
         case "incorrect length": {
