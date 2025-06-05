@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import fc from "fast-check";
 
 import { passwordBlockFromRecords, passwordRecordsFromBlock } from "../src/password_block.ts";
-import { type PasswordRecord } from "../src/password_record.ts";
+import { passwordRecordArb } from "./password_record.testing.ts";
 
-describe("passwords_block.ts.ts [gmpzp3ap7p]", () => {
+describe("password_block.test.ts [gmpzp3ap7p]", () => {
   describe("passwordRecordsFromBlock() [k5ykrs8gw6]", () => {
     test("should throw if block length is not 4096 bytes [we7cpk4xff]", () => {
       fc.assert(
@@ -37,14 +37,3 @@ describe("passwords_block.ts.ts [gmpzp3ap7p]", () => {
 const uint8ArrayLengthNot4096Arb = fc
   .uint8Array({ minLength: 0, maxLength: 4096 * 2 })
   .filter(array => array.length !== 4096);
-
-/**
- * An arbitrary that generates `PasswordRecord` objects with random data.`
- */
-const passwordRecordArb = fc.record<PasswordRecord>({
-  salt: fc.uint8Array({ minLength: 16, maxLength: 16 }),
-  iv: fc.uint8Array({ minLength: 12, maxLength: 12 }),
-  authTag: fc.uint8Array({ minLength: 16, maxLength: 16 }),
-  masterKey: fc.uint8Array({ minLength: 32, maxLength: 32 }),
-  padding: fc.uint8Array({ minLength: 52, maxLength: 52 }),
-});

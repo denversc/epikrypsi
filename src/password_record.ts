@@ -25,11 +25,11 @@ const commaSeparatedListFormat = new Intl.ListFormat(undefined, {
   style: "long",
 });
 
-function toCommaSeparatedOrString<T>(value: T | T[]): string {
+function toCommaSeparatedOrString<T extends string | number>(value: T | T[]): string {
   if (!Array.isArray(value)) {
-    return Bun.inspect(value);
+    return `${value}`;
   }
-  return commaSeparatedListFormat.format(value.map(item => Bun.inspect(item)));
+  return commaSeparatedListFormat.format(value.map(item => `${value}`));
 }
 
 /**
