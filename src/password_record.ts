@@ -90,18 +90,19 @@ export class InvalidPasswordRecordError extends Error {
   }
 }
 
-const passwordRecordProperties: Readonly<
-  Array<Readonly<{ propertyName: keyof PasswordRecord; expectedLength: number }>>
-> = Object.freeze([
-  Object.freeze({ propertyName: "salt", expectedLength: 16 }),
-  Object.freeze({ propertyName: "iv", expectedLength: 12 }),
-  Object.freeze({ propertyName: "authTag", expectedLength: 16 }),
-  Object.freeze({ propertyName: "masterKey", expectedLength: 32 }),
-  Object.freeze({ propertyName: "padding", expectedLength: 52 }),
-]);
+/**
+ * The properties of {@link PasswordRecord} and their expected lengths.
+ */
+export const arrayLengths: Readonly<Record<keyof PasswordRecord, number>> = Object.freeze({
+  salt: 16,
+  iv: 12,
+  authTag: 16,
+  masterKey: 32,
+  padding: 52,
+});
 
 /**
- * The return type from of {@link validatePasswordRecord} that contains validation erorrs
+ * The return type from of {@link validatePasswordRecord} that contains validation errors
  * for individual properties of the given value.
  *
  * If a property is missing then the value of its corresponding property in {@link PasswordRecord}
@@ -123,6 +124,10 @@ type PasswordRecordPropertyErrors = Partial<
  */
 type ValidatePasswordRecordResult = IncorrectType | PasswordRecordPropertyErrors;
 
+function assertPasswordRecordPropertyName(s: string): asserts s is keyof PasswordRecord {
+  // no-op for type narrowing
+}
+
 function validatePasswordRecord(value: unknown): ValidatePasswordRecordResult {
   if (typeof value !== "object") {
     return { expected: "object", actual: typeof value } satisfies IncorrectType;
@@ -131,7 +136,8 @@ function validatePasswordRecord(value: unknown): ValidatePasswordRecordResult {
   }
 
   const errors: PasswordRecordPropertyErrors = {};
-  for (const { propertyName, expectedLength } of passwordRecordProperties) {
+  for (const [propertyName, expectedLength] of Object.entries(arrayLengths)) {
+    assertPasswordRecordPropertyName(propertyName);
     const error = validatePasswordRecordProperty(value, propertyName, expectedLength);
     if (error) {
       // eslint-disable-next-line security/detect-object-injection
@@ -142,28 +148,30 @@ function validatePasswordRecord(value: unknown): ValidatePasswordRecordResult {
 }
 
 function validatePasswordRecordProperty(
-  value: Readonly<Partial<PasswordRecord>>,
+  passwordRecord: Readonly<Partial<PasswordRecord>>,
   propertyName: keyof PasswordRecord,
   expectedLength: number,
 ) {
-  if (propertyName in value) {
-    // eslint-disable-next-line security/detect-object-injection
-    const propertyValue = value[propertyName] as unknown;
-    if (typeof propertyValue !== "object") {
-      return { expected: "object", actual: typeof value } satisfies IncorrectType;
-    } else if (propertyValue === null) {
-      return { expected: "object", actual: "null" } satisfies IncorrectType;
-    } else if (!(propertyValue instanceof Uint8Array)) {
-      const constructorName = (value as unknown)?.constructor?.name ?? "<null prototype>";
-      return {
-        expected: "Uint8Array",
-        actual: constructorName,
-      } satisfies IncorrectType;
-    } else if (propertyValue.length !== expectedLength) {
-      return { expected: expectedLength, actual: propertyValue.length } satisfies IncorrectLength;
-    }
-  } else {
+  if (!(propertyName in passwordRecord)) {
     return PROPERTY_MISSING;
   }
+
+  // eslint-disable-next-line security/detect-object-injection
+  const propertyValue = passwordRecord[propertyName] as unknown;
+
+  if (typeof propertyValue !== "object") {
+    return { expected: "object", actual: typeof propertyValue } satisfies IncorrectType;
+  } else if (propertyValue === null) {
+    return { expected: "object", actual: "null" } satisfies IncorrectType;
+  } else if (!(propertyValue instanceof Uint8Array)) {
+    const constructorName = (propertyValue as unknown)?.constructor?.name ?? "<null prototype>";
+    return {
+      expected: "Uint8Array",
+      actual: constructorName,
+    } satisfies IncorrectType;
+  } else if (propertyValue.length !== expectedLength) {
+    return { expected: expectedLength, actual: propertyValue.length } satisfies IncorrectLength;
+  }
+
   return null;
 }

@@ -31,6 +31,10 @@ export function notNumber(): Arbitrary<Exclude<unknown, number>> {
   return absolutelyAnything().filter(value => typeof value !== "number");
 }
 
+export function notObject(): Arbitrary<Exclude<unknown, object>> {
+  return absolutelyAnything().filter(value => typeof value !== "object");
+}
+
 /**
  * Returns an {@link Arbitrary} that generates values of the given type.
  */
@@ -46,10 +50,10 @@ export function valueOfType(typeName: TypeofResult): Arbitrary<unknown> {
       return double();
     }
     case "function": {
-      return constant(() => {});
+      return string().map(s => () => s);
     }
     case "symbol": {
-      return constant(Symbol("symth9tk3z"));
+      return string({ minLength: 20, unit: "grapheme-ascii" }).map(Symbol);
     }
     case "boolean": {
       return boolean();

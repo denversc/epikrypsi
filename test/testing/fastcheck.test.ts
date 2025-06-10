@@ -7,6 +7,7 @@ import {
   nonEmptyArray,
   notArrayOrIncludesTypesOtherThan,
   notNumber,
+  notObject,
   notString,
   valueOfNotType,
   valueOfType,
@@ -46,6 +47,14 @@ describe("fastcheck.test.ts [wzvdygx2g6]", () => {
     fc.assert(
       fc.property(notNumber(), value => {
         expect(value).not.toBeTypeOf("number");
+      }),
+    );
+  });
+
+  test("notObject() should generate non-objects [b4sagyspp2]", () => {
+    fc.assert(
+      fc.property(notObject(), value => {
+        expect(value).not.toBeTypeOf("object");
       }),
     );
   });
